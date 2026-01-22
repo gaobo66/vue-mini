@@ -1,0 +1,33 @@
+name: Sync GitHub to Gitee
+
+on:
+  # 监听所有分支的push事件
+  push:
+    branches: [ '*' ]
+
+  # 允许手动触发工作流
+  workflow_dispatch:
+
+# 设置必要的权限
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 必须拉取全量历史，否则同步不完整
+      
+      - name: Sync to Gitee
+        uses: wearerequired/git-mirror-action@master
+        env:
+          # SSH私钥，用于Gitee身份验证
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          # GitHub源仓库地址
+          source-repo: git@github.com:gaobo66/vue-mini.git
+          # Gitee目标仓库地址
+          destination-repo: git@gitee.com:gbsy/vue-mini.git
