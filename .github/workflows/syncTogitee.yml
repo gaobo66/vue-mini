@@ -16,18 +16,32 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 必须拉取全量历史，否则同步不完整
-      
-      - name: Sync to Gitee
-        uses: wearerequired/git-mirror-action@master
-        env:
-          # SSH私钥，用于Gitee身份验证
-          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
-        with:
-          # GitHub源仓库地址
-          source-repo: git@github.com:gaobo66/vue-mini.git
-          # Gitee目标仓库地址
-          destination-repo: git@gitee.com:gbsy/vue-mini.git
+          fetch-depth: 0  # 拉取全量历史
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Add Gitee remote
+        run: |
+          # 配置SSH密钥
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEE_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # 禁用StrictHostKeyChecking以避免交互式提示
+          ssh-keyscan -t rsa gitee.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          
+          # 添加Gitee远程仓库
+          git remote add gitee git@gitee.com:gbsy/vue-mini.git
+
+      - name: Push to Gitee
+        run: |
+          # 推送所有分支和标签
+          git push -f gitee --all
+          git push -f gitee --tags
