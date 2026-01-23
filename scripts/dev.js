@@ -34,6 +34,7 @@ const {
   },
 })
 
+console.log('打包格式:', positionals, format)
 // 创建 esm 的 __filename
 const __filename = fileURLToPath(import.meta.url)
 // 创建 esm 的 __dirname
@@ -66,6 +67,7 @@ esbuild
     sourcemap: true, // 开启 sourcemap 方便调试
     bundle: true, // 把所有的依赖，打包到一个文件中
     globalName: pkg.buildOptions.name,
+    charset: 'utf8',//保留中文
   })
   .then(ctx => {
     // 监听文件变更重新打包
