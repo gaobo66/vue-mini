@@ -2,7 +2,7 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-23 14:43:08
+ * @LastEditTime: 2026-01-26 09:53:41
  * @FilePath: \vue-mini\packages\reactivity\src\effect.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -12,8 +12,6 @@
 // 如果你还是不理解，那你就把他想象成一个全局变量，
 // 这个时候如果执行 effect 那全局变量上就有一个正在执行的函数，就是 activeSub
 export let activeSub
-
-
 
 class ReactiveEffect {
   // 表示这个 effect 是否激活
@@ -25,26 +23,13 @@ class ReactiveEffect {
       return this.fn()
     }
 
-
-    /* 
-    * 保存上一个 activeSub 的值，防止嵌套 effect 时丢失
-    * 例如：
-    * effect(() => {
-    *   console.log(count.value, 'effect1')
-    *   effect(() => {
-    *     console.log(count.value, 'effect2')
-    *   })
-    * })
-    * 
-    *不保存上一个activeSub，输出：
-    * 0 effect1
-    * 0 effect2
-    * 1 effect2
-    */
+    /*
+     * 保存上一个 activeSub 的值，防止嵌套 effect 时丢失
+     */
     const prevSub = activeSub
 
-      // 设置当前活跃的副作用函数，方便在 get 中收集依赖
-    activeSub  =this
+    // 设置当前活跃的副作用函数，方便在 get 中收集依赖
+    activeSub = this
     try {
       return this.fn()
     } finally {
@@ -52,14 +37,29 @@ class ReactiveEffect {
       activeSub = prevSub
     }
   }
+
+  /**
+   * 通知更新的方法，如果依赖的数据发生了变化，会调用这个函数（多写这个函数时因为scheduler方法可能被重写）
+   * 1.在收集依赖时默认调用 一次run 方法
+   * 2.在派发更新时，有用户决定，如果传了就调用用户的 scheduler 方法，没有就调用默认的 run 方法
+   */
+  notify() {
+    this.scheduler()
+  }
+
+  /**
+   * 默认调用 run，如果用户传了，那以用户的为主，实例方法覆盖原型方法，（实例属性的优先级，由于原型属性）
+   */
+  scheduler() {
+    this.run()
+  }
 }
-
-
 
 // effect 函数用于注册副作用函数
 // 执行传入的函数，并在执行期间自动收集依赖
-export function effect(fn) {
+export function effect(fn,options?: {scheduler?:Function}) {
   const _effect = new ReactiveEffect(fn)
   // console.log(_effect,'当前活跃的副作用函数')
+  Object.assign(_effect,options)
   _effect.run()
 }
