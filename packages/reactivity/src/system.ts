@@ -44,6 +44,9 @@ export interface Link {
 }
 
 
+// 保存已经被清理掉的节点，留着复用
+let linkPool: Link
+
 /**
  * 链接链表关系
  * @param dep
@@ -67,14 +70,27 @@ export function link(dep, sub) {
   //endregion
 
   // 如果 activeSub 有，那就保存起来，等我更新的时候，触发
-  const newLink = {
-    // 订阅者：即关联的 effect
-    sub,
-    nextSub: undefined,
-    prevSub: undefined,
-    // 依赖项：即关联的 ref
-    dep,
-    nextDep: undefined,
+  let newLink
+
+  /**
+   * 看一下 linkPool 有没有，如果有，就复用
+   */
+  if (linkPool) {
+    // console.log('复用链表节点',linkPool)
+    newLink = linkPool
+    linkPool = linkPool.nextDep
+    newLink.nextDep = nextDep
+    newLink.dep = dep
+    newLink.sub = sub
+  } else {
+    // 如果没有，就创建新的
+    newLink = {
+      sub,
+      dep,
+      nextDep,
+      nextSub: undefined,
+      prevSub: undefined,
+    }
   }
 
   //region 将链表节点和 dep 建立关联关系
@@ -186,7 +202,9 @@ function clearTracking(link: Link) {
     }
 
     link.dep = link.sub = undefined
-    link.nextDep = undefined
+    link.nextDep = linkPool
+    linkPool = link
+    // console.log('清理不要的依赖关系', linkPool)
     link = nextDep
   }
 }
