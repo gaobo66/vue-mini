@@ -134,10 +134,8 @@ export function startTrack(sub) {
  * @param sub
  */
 export function endTrack(sub) {
-  sub.tracking = false
   const depsTail = sub.depsTail
-  // 追踪完了，不脏了
-  sub.dirty = false
+
   /**
    * depsTail 有，并且 depsTail 还有 nextDep ，我们应该把它们的依赖关系清理掉
    * depsTail 没有，并且头节点有，那就把所有的都清理掉

@@ -51,8 +51,8 @@ class ReactiveEffect {
     try {
       return this.fn()
     } finally {
-      // endTrack(this)
-      // 执行完成后，恢复之前的 effect
+      endTrack(this)
+      // 执行完成后，恢l复之前的 effect
       setActiveSub(prevSub)
     }
   }
