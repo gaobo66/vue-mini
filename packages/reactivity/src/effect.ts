@@ -24,6 +24,8 @@ class ReactiveEffect {
   // 表示这个 effect 是否激活
   active = true
 
+  // effect 的标识 ，表示这个 effect 是否正在收集依赖
+  tracking = false
   /**
    * 依赖项链表的头节点
    */
