@@ -2,10 +2,13 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-26 09:53:41
+ * @LastEditTime: 2026-01-27 09:19:18
  * @FilePath: \vue-mini\packages\reactivity\src\effect.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
+
+import { Link, startTrack } from "./system"
+
 // 当前正在收集的副作用函数，在模块中导出变量，这个时候当我执行 effect 的时候，
 // 我就把当前正在执行的函数，放到 activeSub 中，
 // 当然这么做只是为了我们在收集依赖的时候能找到它，
@@ -13,9 +16,23 @@
 // 这个时候如果执行 effect 那全局变量上就有一个正在执行的函数，就是 activeSub
 export let activeSub
 
+export function setActiveSub(sub) {
+  activeSub = sub
+}
+
 class ReactiveEffect {
   // 表示这个 effect 是否激活
   active = true
+
+  /**
+   * 依赖项链表的头节点
+   */
+  deps: Link | undefined
+
+  /**
+   * 依赖项链表的尾节点
+   */
+  depsTail: Link | undefined
   constructor(public fn) {}
 
   run() {
@@ -29,7 +46,8 @@ class ReactiveEffect {
     const prevSub = activeSub
 
     // 设置当前活跃的副作用函数，方便在 get 中收集依赖
-    activeSub = this
+    setActiveSub(this)
+    startTrack(this)
     try {
       return this.fn()
     } finally {
@@ -62,4 +80,13 @@ export function effect(fn,options?: {scheduler?:Function}) {
   // console.log(_effect,'当前活跃的副作用函数')
   Object.assign(_effect,options)
   _effect.run()
+
+
+  /**
+   * 绑定函数的 this
+   */
+  // const runner = ()=>_effect.run()
+  const runner = _effect.run.bind(_effect)
+  runner.effect = _effect
+  return runner
 }

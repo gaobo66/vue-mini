@@ -4,17 +4,43 @@ import { activeSub } from "./effect"
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 11:12:10
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-26 09:45:25
+ * @LastEditTime: 2026-01-27 09:30:37
  * @FilePath: \vue-mini\packages\reactivity\src\system.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
+
+/**
+ * 表示依赖的链表节点（ref）
+ */
+export interface Dep {
+  // 依赖的链表头节点（关联的effect链表）
+  deps:Link | undefined
+  // 依赖项链表的尾节点
+  depsTail: Link | undefined
+}
+
+
+/**
+ * 表示订阅者的链表节点,即存放我们的 effect 函数
+ */
+export interface Sub {
+  deps:Link | undefined // 依赖的链表头节点（关联的ref链表）
+  // 依赖项链表的尾节点
+  depsTail: Link | undefined
+}
+
+
 export interface Link {
   // 订阅者  即当前要关联的 effect
-  sub: Function
+  sub: Sub
   // 链表的下一个节点
   nextSub: Link
   // 链表的上一个节点
   prevSub: Link
+  // 依赖项 即当前关联的 ref
+  dep:Link
+  // 链表的下一个节点
+  nextDep: Link
 }
 
 
@@ -24,13 +50,34 @@ export interface Link {
  * @param sub
  */
 export function link(dep, sub) {
+  //region 尝试复用链表节点
+  const currentDep = sub.depsTail
+  /**
+   * 分两种情况：
+   * 1. 如果头节点有，尾节点没有，那么尝试着复用头节点
+   * 2. 如果尾节点还有 nextDep，尝试复用尾节点的 nextDep
+   */
+  const nextDep = currentDep === undefined ? sub.deps : currentDep.nextDep
+  // 1. 确保待复用的节点存在
+  // 2. 确保待复用节点的依赖项与当前依赖项相同
+  if (nextDep && nextDep.dep === dep) {
+    sub.depsTail = nextDep
+    return
+  }
+  //endregion
+
   // 如果 activeSub 有，那就保存起来，等我更新的时候，触发
   const newLink = {
+    // 订阅者：即关联的 effect
     sub,
     nextSub: undefined,
-    prevSub: undefined
+    prevSub: undefined,
+    // 依赖项：即关联的 ref
+    dep,
+    nextDep: undefined,
   }
 
+  //region 将链表节点和 dep 建立关联关系
   /**
    * 关联链表关系，分两种情况
    * 1. 尾节点有，那就往尾节点后面加
@@ -44,6 +91,22 @@ export function link(dep, sub) {
     dep.subs = newLink
     dep.subsTail = newLink
   }
+  //endregion
+
+  //region 将链表节点和 sub 建立关联关系
+  /**
+   * 关联链表关系，分两种情况
+   * 1. 尾节点有，那就往尾节点后面加
+   * 2. 如果尾节点没有，则表示第一次关联，那就往头节点加，头尾相同
+   */
+  if (sub.depsTail) {
+    sub.depsTail.nextDep = newLink
+    sub.depsTail = newLink
+  } else {
+    sub.deps = newLink
+    sub.depsTail = newLink
+  }
+  //endregion
 }
 
 /**
@@ -51,14 +114,20 @@ export function link(dep, sub) {
  * @param dep 存放的effect的链表
  */
 export function trackRef(dep) {
-//   console.log('trackRef收集依赖', dep, activeSub)
+  // console.log('trackRef收集依赖', dep, activeSub)
   if (activeSub) {
     link(dep, activeSub)
   }
 }
 
 
-
+/**
+ * 开始追踪依赖，将depsTail，尾节点设置成 undefined
+ * @param sub
+ */
+export function startTrack(sub) {
+  sub.depsTail = undefined
+}
 
 /**
  * 传播更新的函数
@@ -85,3 +154,5 @@ export function triggerRef(dep) {
     propagate(dep.subs)
   }
 }
+
+
