@@ -4,7 +4,7 @@ import { activeSub } from "./effect"
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 11:12:10
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-27 09:30:37
+ * @LastEditTime: 2026-01-27 10:02:40
  * @FilePath: \vue-mini\packages\reactivity\src\system.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -12,11 +12,11 @@ import { activeSub } from "./effect"
 /**
  * 表示依赖的链表节点（ref）
  */
-export interface Dep {
-  // 依赖的链表头节点（关联的effect链表）
-  deps:Link | undefined
-  // 依赖项链表的尾节点
-  depsTail: Link | undefined
+export interface Dependency {
+  // 订阅者链表的头节点
+  subs: Link | undefined
+  // 订阅者链表的尾节点
+  subsTail: Link | undefined
 }
 
 
@@ -38,7 +38,7 @@ export interface Link {
   // 链表的上一个节点
   prevSub: Link
   // 依赖项 即当前关联的 ref
-  dep:Link
+  dep:Dependency
   // 链表的下一个节点
   nextDep: Link
 }
@@ -127,6 +127,70 @@ export function trackRef(dep) {
  */
 export function startTrack(sub) {
   sub.depsTail = undefined
+}
+
+/**
+ * 结束追踪，找到需要清理的依赖，断开关联关系
+ * @param sub
+ */
+export function endTrack(sub) {
+  sub.tracking = false
+  const depsTail = sub.depsTail
+  // 追踪完了，不脏了
+  sub.dirty = false
+  /**
+   * depsTail 有，并且 depsTail 还有 nextDep ，我们应该把它们的依赖关系清理掉
+   * depsTail 没有，并且头节点有，那就把所有的都清理掉
+   */
+  if (depsTail) {
+     // 如果 depsTail 还有 nextDep，说明后面的依赖需要清理
+    if (depsTail.nextDep) {
+      clearTracking(depsTail.nextDep)
+      depsTail.nextDep = undefined
+    }
+     // 如果 depsTail 为空但 deps 存在，说明这次执行没有收集到任何依赖
+  } else if (sub.deps) {
+    clearTracking(sub.deps)
+    sub.deps = undefined
+  }
+}
+
+
+/**
+ * @description: 清理依赖关系
+ * @param link 
+ */
+function clearTracking(link: Link) {
+  while (link) {
+    const { prevSub, nextSub, nextDep, dep } = link
+
+    /**
+     * 如果 prevSub 有，那就把 prevSub 的下一个节点，指向当前节点的下一个
+     * 如果没有，那就是头节点，那就把 dep.subs 指向当前节点的下一个
+     */
+
+    if (prevSub) {
+      prevSub.nextSub = nextSub
+      link.nextSub = undefined
+    } else {
+      dep.subs = nextSub
+    }
+
+    /**
+     * 如果下一个有，那就把 nextSub 的上一个节点，指向当前节点的上一个节点
+     * 如果下一个没有，那它就是尾节点，把 dep.depsTail 只想上一个节点
+     */
+    if (nextSub) {
+      nextSub.prevSub = prevSub
+      link.prevSub = undefined
+    } else {
+      dep.subsTail = prevSub
+    }
+
+    link.dep = link.sub = undefined
+    link.nextDep = undefined
+    link = nextDep
+  }
 }
 
 /**
