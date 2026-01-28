@@ -12,7 +12,7 @@ import { reactive } from './reactive';
 import { Link ,trackRef,triggerRef,Dependency} from './system';
 
 
-enum RefImplFlag {
+export enum ReactiveFlags {
   IS_REF = '__v_isRef',
 }
 class RefImpl  implements Dependency{
@@ -28,7 +28,7 @@ class RefImpl  implements Dependency{
    */
   subsTail: Link
 //   标识当前属性是否是 ref 类型
-  [RefImplFlag.IS_REF]= true
+  [ReactiveFlags.IS_REF]= true
   constructor(value) {
     /**
      * 如果 value 是一个对象，那么我们使用 reactive 给它搞成响应式对象
@@ -60,5 +60,5 @@ export function ref(value) {
 * @return {*}
 */
 export function isRef(value) {
-  return !!(value&&value[RefImplFlag.IS_REF] === true)
+  return !!(value&&value[ReactiveFlags.IS_REF] === true)
 }

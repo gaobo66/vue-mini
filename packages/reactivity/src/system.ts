@@ -4,7 +4,7 @@ import { activeSub } from "./effect"
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 11:12:10
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-27 10:02:40
+ * @LastEditTime: 2026-01-28 16:14:11
  * @FilePath: \vue-mini\packages\reactivity\src\system.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -211,6 +211,25 @@ function clearTracking(link: Link) {
   }
 }
 
+
+
+
+/**
+ * 处理计算属性的更新
+ * 更新计算属性
+ * 1. 调用 update
+ * 2. 通知 subs 链表上所有的 sub，重新执行
+ * @param sub 
+ */
+function processComputedUpdate(sub) {
+  console.log('processComputedUpdate', sub)
+  if (sub.subs && sub.update()) {
+    // sub.update 返回 true，表示值发生了变化
+    propagate(sub.subs)
+  }
+}
+
+
 /**
  * 传播更新的函数
  * @param subs
@@ -220,8 +239,15 @@ export function propagate(subs) {
   let queuedEffect = []
   while (link) {
     const sub  = link.sub
-    if (!sub.tracking) {
-      queuedEffect.push(sub)
+    if (!sub.tracking&&!sub.dirty) {
+      sub.dirty = true
+      // 💡 如果是 computed ，交给 processComputedUpdate 处理
+      if('update' in sub) {
+         console.log('propagate', sub)
+        processComputedUpdate(sub)
+      }else{
+        queuedEffect.push(sub)
+      }
     }
     link = link.nextSub
   }

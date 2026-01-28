@@ -26,6 +26,10 @@ class ReactiveEffect {
 
   // effect 的标识 ，表示这个 effect 是否正在收集依赖
   tracking = false
+
+
+  // 表示当前 effect 是否是脏的，第一次执行effect 设置是脏的，因为一上来就会执行一次 run 方法
+  dirty = false
   /**
    * 依赖项链表的头节点
    */
