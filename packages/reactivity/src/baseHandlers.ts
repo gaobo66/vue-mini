@@ -1,18 +1,33 @@
 import { get } from "node:http";
 import { track, trigger } from "./dep";
 import { isRef } from "./ref";
-import { hasChanged } from "@vue/shared";
+import { hasChanged, isObject } from "@vue/shared";
+import { reactive } from "./reactive";
 
 export const mutableHandlers = {
     get(target, key, receiver) {
 
 
+        
         /**
          * target = { a: { b: 2 } }
          * 收集依赖:绑定target 中的某一个key 和sub的关系
          */
         track(target, key)
-        return Reflect.get(target, key, receiver)
+        const res = Reflect.get(target, key, receiver)
+        /**
+         * 如果是ref类型，就返回它的值
+         */
+        if (isRef(res)) {
+          return res.value
+        }
+        if (isObject(res)) {
+          /**
+           * 如果 res 是一个对象，那么我就给它包装成 reactive,解决嵌套对象不是响应式的问题
+           */
+          return reactive(res)
+        }
+        return res
     
     },
     set(target, key, newValue, receiver) {
@@ -41,8 +56,6 @@ export const mutableHandlers = {
         if (hasChanged(newValue, oldValue)) {
         trigger(target, key)
         }
-
-
 
         return res
     }

@@ -68,6 +68,7 @@ function createReactiveObject(target) {
 /**
  * 
  * @description: 判断target是不是响应式对象
+ * vu源码是在proxy的get中加了一个标识位__v_isReactive
  * @param value 
  * @returns 
  */
