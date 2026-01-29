@@ -1,7 +1,7 @@
 import { get } from "node:http";
 import { track, trigger } from "./dep";
 import { isRef } from "./ref";
-import { hasChanged, isObject } from "@vue/shared";
+import { hasChanged, isArray, isObject } from "@vue/shared";
 import { reactive } from "./reactive";
 
 export const mutableHandlers = {
@@ -32,6 +32,11 @@ export const mutableHandlers = {
     },
     set(target, key, newValue, receiver) {
         const oldValue = target[key];
+
+        //region 为了处理隐式更新数组的 length
+        const targetIsArray = isArray(target)
+        const oldLength = targetIsArray ? target.length : 0
+        //endregion
         
         /**
          * 如果oldValue是ref类型，就取它的值
@@ -57,6 +62,22 @@ export const mutableHandlers = {
         trigger(target, key)
         }
 
+        //region 处理隐式更新数组的 length
+        /**
+         * 隐式更新 length
+         * 更新前：length = 4 => ['a', 'b', 'c', 'd']
+         * 更新后：length = 5 => ['a', 'b', 'c', 'd', 'e']
+         * 更新动作，以 push 为例，追加了一个 e
+         * 隐式更新 length 的方法：push pop shift unshift
+         *
+         * 如何知道 隐式更新了 length
+         */
+        const newLength = targetIsArray ? target.length : 0
+        if (targetIsArray && newLength !== oldLength && key !== 'length') {
+            // console.log('隐式更新了 length',key)
+            trigger(target, 'length')
+        }
+        //endregion
         return res
     }
 }
