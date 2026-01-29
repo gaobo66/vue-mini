@@ -4,7 +4,7 @@ import { activeSub } from "./effect"
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 11:12:10
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-28 16:14:11
+ * @LastEditTime: 2026-01-29 10:56:58
  * @FilePath: \vue-mini\packages\reactivity\src\system.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -152,6 +152,8 @@ export function startTrack(sub) {
  */
 export function endTrack(sub) {
   sub.tracking = false
+ // 在 endTrack 中统一重置 dirty 状态
+  sub.dirty = false
   const depsTail = sub.depsTail
 
   /**
@@ -169,6 +171,7 @@ export function endTrack(sub) {
     clearTracking(sub.deps)
     sub.deps = undefined
   }
+   
 }
 
 
@@ -251,7 +254,7 @@ export function propagate(subs) {
     }
     link = link.nextSub
   }
-
+  console.log('propagate11', queuedEffect)
   queuedEffect.forEach((effect) => effect.notify())
 }
 

@@ -1,7 +1,7 @@
 import { hasChanged, isFunction } from '@vue/shared'
 import { Dependency, endTrack, link, Link, startTrack, Sub } from './system'
 
-import { ReactiveFlags } from "./ref"
+import { ReactiveFlags } from "./constants"
 import { get } from 'node:http'
 import { activeSub, setActiveSub } from './effect'
 

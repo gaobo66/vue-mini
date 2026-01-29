@@ -2,12 +2,12 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-27 10:08:11
+ * @LastEditTime: 2026-01-29 08:54:18
  * @FilePath: \vue-mini\packages\reactivity\src\effect.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
-import { endTrack, Link, startTrack } from "./system"
+import { endTrack, Link, startTrack, Sub } from "./system"
 
 // 当前正在收集的副作用函数，在模块中导出变量，这个时候当我执行 effect 的时候，
 // 我就把当前正在执行的函数，放到 activeSub 中，
@@ -20,7 +20,7 @@ export function setActiveSub(sub) {
   activeSub = sub
 }
 
-class ReactiveEffect {
+export class ReactiveEffect implements Sub {
   // 表示这个 effect 是否激活
   active = true
 

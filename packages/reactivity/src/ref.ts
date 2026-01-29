@@ -2,19 +2,18 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-01-28 14:40:45
+ * @LastEditTime: 2026-01-29 10:29:58
  * @FilePath: \vue-mini\packages\reactivity\src\ref.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { isObject } from '@vue/shared';
+import { hasChanged, isObject } from '@vue/shared';
 import { activeSub } from './effect'
 import { reactive } from './reactive';
 import { Link ,trackRef,triggerRef,Dependency} from './system';
+import { ReactiveFlags } from './constants';
 
 
-export enum ReactiveFlags {
-  IS_REF = '__v_isRef',
-}
+
 class RefImpl  implements Dependency{
   _value;
   /**
@@ -43,9 +42,11 @@ class RefImpl  implements Dependency{
     return this._value
   }
   set value(newValue) {
-    this._value = isObject(newValue) ? reactive(newValue) : newValue
-    // 触发所有依赖当前 ref 的副作用函数(派发更新)
-    triggerRef(this)
+    if(hasChanged(this._value,newValue)){
+      this._value = isObject(newValue) ? reactive(newValue) : newValue
+      // 触发所有依赖当前 ref 的副作用函数(派发更新)
+      triggerRef(this)
+    }
   }
 }
 
