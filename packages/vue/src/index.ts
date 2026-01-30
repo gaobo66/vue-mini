@@ -1,1 +1,1 @@
-console.log("初始化项目vue");
+export  * from '@vue/runtime-dom'

@@ -1,0 +1,70 @@
+<!--
+ * @Author: Mr.G 1271036013@qq.com
+ * @Date: 2026-01-30 09:58:03
+ * @LastEditors: Mr.G 1271036013@qq.com
+ * @LastEditTime: 2026-01-30 09:58:08
+ * @FilePath: \vue-mini\packages\vue\examples\01-runtimeDom-demo.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      import {
+        h,
+        createRenderer,
+      } from '../../../node_modules/vue/dist/vue.esm-browser.js'
+
+      import { renderOptions } from '../dist/vue.esm.js'
+      /**
+       * vue 通过渲染器，将虚拟节点，转换成真实 DOM ，最终渲染到页面上
+       *
+       * vnode => render => 真实 DOM
+       */
+
+      /**
+       * 1 2 3
+       */
+
+      /**
+       * runtime-core 依赖响应式模块 reactivity
+       *
+       * runtime-dom 依赖 runtime-core
+       *
+       * vue 包 导出了 runtime-dom
+       */
+
+      const renderer = createRenderer(renderOptions)
+
+      const vnode = h(
+        'div',
+        {
+          id: 'aaa',
+        },
+        'hello world',
+      )
+
+      const vnode2 = h(
+        'div',
+        {
+          id: 'bbb',
+        },
+        'hello world',
+      )
+
+      //region 更新操作
+
+      renderer.render(vnode, app)
+
+      setTimeout(() => {
+        renderer.render(vnode2, app)
+      }, 1000)
+      //endregion
+    </script>
+  </body>
+</html>
