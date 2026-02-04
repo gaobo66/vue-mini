@@ -2,7 +2,7 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-02-02 10:33:39
+ * @LastEditTime: 2026-02-04 14:05:38
  * @FilePath: \vue-mini\packages\reactivity\src\ref.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -26,13 +26,21 @@ class RefImpl  implements Dependency{
    * 订阅者链表的尾节点，理解为我们讲的 tail
    */
   subsTail: Link
-//   标识当前属性是否是 ref 类型
-  [ReactiveFlags.IS_REF]= true
-  constructor(value) {
+  //   标识当前属性是否是 ref 类型
+  public readonly [ReactiveFlags.IS_REF]= true
+  /**
+   * 标识当前属性是否是浅层响应式
+   */
+  public readonly [ReactiveFlags.IS_SHALLOW]:boolean = false
+  constructor(value,hasShallow:boolean) {
+
+    this[ReactiveFlags.IS_SHALLOW] = hasShallow
+
     /**
      * 如果 value 是一个对象，那么我们使用 reactive 给它搞成响应式对象
      */
-    this._value = isObject(value) ? reactive(value) : value
+    // this._value = isObject(value) ? reactive(value) : value
+    this._value = hasShallow ? value : convert(value)
   }
   get value() {
     // 收集依赖
@@ -51,7 +59,7 @@ class RefImpl  implements Dependency{
 }
 
 export function ref(value) {
-  return new RefImpl(value)
+  return new RefImpl(value,false)
 }
 
 
@@ -75,6 +83,15 @@ export  function unref(value){
   return isRef(value) ? value.value : value
 }
 
+
+/**
+ * @description 创建一个浅层 ref 类型的对象
+ * @param value 可以是 ref 类型，也可以是普通值
+ * @returns 浅层 ref 类型的对象 
+ */
+export function shallowRef(value){
+  return new RefImpl(value,true)
+}
 
 /**
  * 1. toRef
@@ -172,3 +189,7 @@ export function proxyRefs(target) {
     },
   })
 }
+
+function convert(value){
+  return  isObject(value) ? reactive(value) : value
+} 

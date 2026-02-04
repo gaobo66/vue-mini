@@ -1,0 +1,62 @@
+<!--
+ * @Author: Mr.G 1271036013@qq.com
+ * @Date: 2026-02-02 10:06:45
+ * @LastEditors: Mr.G 1271036013@qq.com
+ * @LastEditTime: 2026-02-04 15:30:00
+ * @FilePath: \vue-mini\packages\reactivity\examples\09-常用api.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+    <style>
+      body {
+        padding: 150px;
+      }
+    </style>
+  </head>
+  <body>
+  <div id="app"></div>
+  <script type="module">
+    // import { shallowRef, effect,shallowReactive,isReactive } from '../../../node_modules/vue/dist/vue.esm-browser.js'
+    import { reactive, effect, ref,shallowRef,shallowReactive,isReactive } from '../dist/reactivity.esm.js'
+
+    // const c = ref({
+    //     count: 1
+    // });
+
+    // effect(() => {
+    //   console.log(c.value.count)
+    // })
+
+    // setTimeout(() => {
+    //   c.value.count++ // 这一行不会触发 effect
+    //   console.log(c)
+    // }, 1000)
+
+
+    const state = shallowReactive({
+      a: 1,
+      b: {
+        c: 1
+      }
+    })
+
+    effect(() => {
+      // console.log(state.b.c)
+      console.log(state.a)
+    })
+
+    setTimeout(() => {
+      state.b.c++ // 这一行不会触发 effect
+      state.a++ 
+    }, 1000)
+    console.log(isReactive(state))
+
+
+  </script>
+</body>
+
+</html>
