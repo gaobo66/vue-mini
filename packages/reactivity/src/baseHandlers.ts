@@ -2,7 +2,8 @@ import { get } from "node:http";
 import { track, trigger } from "./dep";
 import { isRef } from "./ref";
 import { hasChanged, isArray, isObject } from "@vue/shared";
-import { reactive } from "./reactive";
+import { reactive, readonly } from "./reactive";
+import { ReactiveFlags } from "./constants";
 
 
 
@@ -10,14 +11,27 @@ import { reactive } from "./reactive";
 /**
  * 创建一个 getter 工厂函数
  * @param hasShallow 是否是浅响应式
+ * @param hasReadonly 是否是只读响应式
  */
-function createGetter(hasShallow = false) {
+function createGetter(hasShallow = false,hasReadonly = false) {
     return function get(target:object, key:string|symbol, receiver:object):any {
+
+        // 标记是否是响应式对象
+        if (key === ReactiveFlags.IS_REACTIVE) {
+          return true
+        }
+        // 标记是否是只读对象
+        if (key === ReactiveFlags.IS_READONLY) {
+          return hasReadonly
+        }
+
        /**
          * target = { a: { b: 2 } }
          * 收集依赖:绑定target 中的某一个key 和sub的关系
          */
-        track(target, key)
+        if(!hasReadonly){ // 只读对象不收集依赖
+            track(target, key)
+        }
         const res = Reflect.get(target, key, receiver)
         /**
          * 如果是ref类型，就返回它的值
@@ -26,10 +40,13 @@ function createGetter(hasShallow = false) {
           return res.value
         }
         if (isObject(res)) {
-          /**
+            /**
            * 如果 res 是一个对象，那么我就给它包装成 reactive,解决嵌套对象不是响应式的问题
+           * 1.如果是只读响应式，就包装成只读对象
+           * 2.如果是浅响应式，就直接返回对象，不包装成响应式对象
            */
-          return hasShallow ? res : reactive(res)
+            //   return hasShallow ? res : reactive(res)
+            return hasReadonly?readonly(res):(hasShallow ? res : reactive(res))
         }
         return res 
     }
@@ -223,3 +240,17 @@ export const shallowReactiveHandlers :ProxyHandler<object> = {
 }
 
 
+/**
+ * @description 只读响应式处理函数
+ */
+export const readonlyHandlers :ProxyHandler<object> = {
+    get: createGetter(false,true),
+    set(target, key, newValue, receiver) {
+        console.warn(`Set operation on key "${String(key)}" failed: target is readonly.`,target)
+        return false
+    },
+    deleteProperty(target, key) {
+        console.warn(`Delete operation on key "${String(key)}" failed: target is readonly.`,target)
+        return false
+    }
+}

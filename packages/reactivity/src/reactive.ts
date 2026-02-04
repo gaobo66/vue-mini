@@ -1,5 +1,6 @@
 import {isObject} from "@vue/shared"
-import { mutableHandlers, shallowReactiveHandlers } from "./baseHandlers"
+import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers } from "./baseHandlers"
+import { ReactiveFlags } from "./constants"
 
 
 
@@ -14,6 +15,13 @@ const reactiveMap = new WeakMap()
  * 保存所有使用 shallowReactive 创建出来的响应式对象
  */
 const shallowReactiveMap =  new WeakMap()
+
+
+
+/**
+ * 保存所有使用 readonly 创建出来的响应式对象
+ */
+const readonlyMap = new WeakMap()
 
 
 /**
@@ -75,8 +83,17 @@ function createReactiveObject(target,handlers,proxyMap) {
 
     /**
      * 看一下这个 target 在不在 reactiveSet 里面，如果在，就证明 target 是响应式的，直接返回
+     * 源码不是这样处理的，源码是在 get 中添加标记
      */     
-    if(reactiveSet.has(target)){
+    // if(reactiveSet.has(target)){
+    //     return target
+    // }
+
+
+    /** 统一处理“防止重复代理”的情况
+     *如果 target 已经是 reactive 或 readonly， 
+    */
+    if(target[ReactiveFlags.IS_REACTIVE] || target[ReactiveFlags.IS_READONLY]){
         return target
     }
 
@@ -103,7 +120,7 @@ function createReactiveObject(target,handlers,proxyMap) {
    /**
     * 把 proxy 放到 reactiveSet 里面，表示它是一个响应式对象
     */
-   reactiveSet.add(proxy)
+//    reactiveSet.add(proxy)
 
    return proxy
 }
@@ -128,13 +145,29 @@ export function shallowReactive(target) {
     return createReactiveObject(target,shallowReactiveHandlers,shallowReactiveMap)
 }
 
+export function readonly(target) {
+
+    return createReactiveObject(target,readonlyHandlers,readonlyMap)
+}
+
 /**
  * 
  * @description: 判断target是不是响应式对象
  * vu源码是在proxy的get中加了一个标识位__v_isReactive
  * @param value 
- * @returns 
+ * @returns boolean
  */
 export function isReactive(value) {
-    return reactiveSet.has(value)
+    // return reactiveSet.has(value)
+    return !!(value&&value[ReactiveFlags.IS_REACTIVE])
+}
+
+/**
+ * 
+ * @description: 判断target是不是只读对象
+ * @param value 
+ * @returns boolean
+ */
+export function isReadonly(value) {
+    return !!(value&&value[ReactiveFlags.IS_READONLY])
 }
