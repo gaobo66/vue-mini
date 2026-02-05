@@ -93,9 +93,9 @@ function createReactiveObject(target,handlers,proxyMap) {
     /** 统一处理“防止重复代理”的情况
      *如果 target 已经是 reactive 或 readonly， 
     */
-    if(target[ReactiveFlags.IS_REACTIVE] || target[ReactiveFlags.IS_READONLY]){
-        return target
-    }
+    // if(target[ReactiveFlags.IS_REACTIVE] || target[ReactiveFlags.IS_READONLY]){
+    //     return target
+    // }
 
     /**
      * 获取到之前这个 target 创建的代理对象
@@ -146,7 +146,6 @@ export function shallowReactive(target) {
 }
 
 export function readonly(target) {
-
     return createReactiveObject(target,readonlyHandlers,readonlyMap)
 }
 
@@ -170,4 +169,19 @@ export function isReactive(value) {
  */
 export function isReadonly(value) {
     return !!(value&&value[ReactiveFlags.IS_READONLY])
+}
+
+
+
+/**
+ * toRaw()的用途：
+ * 1.获取原始对象，用于避免触发响应式更新
+ * 2.用于性能优化，比如在不需要响应式的场景下直接操作原始对象
+ * 3.用于性能优化，比如在不需要响应式的场景下直接操作原始对象
+ * @param reactiveObj 响应式对象
+ * @returns 原始对象
+ */
+export function toRaw<T>(observed:T):T {
+    const raw = observed&&observed[ReactiveFlags.RAW]
+    return raw?toRaw(raw):observed
 }

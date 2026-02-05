@@ -25,6 +25,13 @@ function createGetter(hasShallow = false,hasReadonly = false) {
           return hasReadonly
         }
 
+        /**
+         * 获取原始对象
+         */
+        if (key === ReactiveFlags.RAW) {
+            return target
+        }
+
        /**
          * target = { a: { b: 2 } }
          * 收集依赖:绑定target 中的某一个key 和sub的关系
@@ -243,14 +250,15 @@ export const shallowReactiveHandlers :ProxyHandler<object> = {
 /**
  * @description 只读响应式处理函数
  */
+const readonlyGet = createGetter(false, true) 
 export const readonlyHandlers :ProxyHandler<object> = {
-    get: createGetter(false,true),
+    get: readonlyGet,
     set(target, key, newValue, receiver) {
         console.warn(`Set operation on key "${String(key)}" failed: target is readonly.`,target)
-        return false
+        return true
     },
     deleteProperty(target, key) {
         console.warn(`Delete operation on key "${String(key)}" failed: target is readonly.`,target)
-        return false
+        return true
     }
 }

@@ -2,7 +2,7 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-02-02 10:06:45
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-02-04 17:27:13
+ * @LastEditTime: 2026-02-05 10:05:03
  * @FilePath: \vue-mini\packages\reactivity\examples\09-常用api.html
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -23,6 +23,7 @@
     // import { reactive, effect,readonly,isReadonly } from '../../../node_modules/vue/dist/vue.esm-browser.js'
     import { reactive, effect,readonly,isReadonly  } from '../dist/reactivity.esm.js'
 
+    const obj = {}
      const state = reactive({
       a: 1,
       b: {
@@ -37,8 +38,8 @@
     })
 
     setTimeout(() => {
-      // state.a++ // 修改原始的 reactive 对象
-      readonlyState.a++ // 尝试修改 readonly 对象
+      state.a++ // 修改原始的 reactive 对象
+      // readonlyState.a++ // 尝试修改 readonly 对象
     }, 1000)
 
     console.log('isReadonly',isReadonly(readonlyState))

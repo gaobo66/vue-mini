@@ -1,0 +1,101 @@
+<!--
+ * @Author: Mr.G 1271036013@qq.com
+ * @Date: 2026-02-04 16:39:53
+ * @LastEditors: Mr.G 1271036013@qq.com
+ * @LastEditTime: 2026-02-05 14:09:33
+ * @FilePath: \vue-mini\packages\reactivity\examples\12-常用api-toRaw.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>toRaw() 使用场景 - 大数据处理性能优化</title>
+    <style>
+      body {
+        padding: 50px;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+      }
+      .result {
+        background: #f5f5f5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      button {
+        background: #42b983;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      button:hover {
+        background: #35495e;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>toRaw() 函数使用场景 - 大数据处理</h1>
+    
+    <h2>场景说明</h2>
+    <p>当需要对响应式数据进行大量或频繁的操作时，直接操作响应式对象会触发大量的依赖收集和触发，影响性能。使用 toRaw() 获取原始对象可以避免这些开销。</p>
+    
+    <div id="app">
+      <!-- 为按钮添加id，移除onclick属性 -->
+      <button id="directBtn">直接操作响应式数组</button>
+      <button id="toRawBtn">使用 toRaw() 操作原始数组</button>
+      <div class="result" id="directResult"></div>
+      <div class="result" id="toRawResult"></div>
+    </div>
+
+    <script type="module">
+      import { reactive, effect, toRaw } from '../dist/reactivity.esm.js'
+
+      // 创建一个大型响应式数组
+      const largeData = reactive({
+        items: Array.from({ length: 1000000 }, (_, i) => ({ id: i, value: Math.random() }))
+      })
+
+      // 创建一个依赖于数组的effect
+      effect(() => {
+        console.log(`数组长度: ${largeData.items.length}`)
+      })
+
+      // 直接操作响应式数组
+      function testDirect() {
+        const startTime = performance.now()
+        
+        // 直接操作响应式数组 - 会触发大量依赖收集和触发
+        for (let i = 0; i < largeData.items.length; i++) {
+          largeData.items[i].value = Math.random() * 1000
+        }
+        
+        const endTime = performance.now()
+        document.getElementById('directResult').textContent = 
+          `直接操作耗时: ${(endTime - startTime).toFixed(2)}ms (会触发大量响应式开销)`
+      }
+
+      // 使用toRaw()操作原始数组
+      function testWithToRaw() {
+        const startTime = performance.now()
+        
+        // 使用toRaw()获取原始对象 - 避免响应式开销
+        const rawData = toRaw(largeData)
+        for (let i = 0; i < rawData.items.length; i++) {
+          rawData.items[i].value = Math.random() * 1000
+        }
+        
+        const endTime = performance.now()
+        document.getElementById('toRawResult').textContent = 
+          `使用toRaw()耗时: ${(endTime - startTime).toFixed(2)}ms (避免了响应式开销)`
+      }
+
+      // 使用事件监听器绑定按钮点击事件
+      document.getElementById('directBtn').addEventListener('click', testDirect)
+      document.getElementById('toRawBtn').addEventListener('click', testWithToRaw)
+    </script>
+  </body>
+</html>
