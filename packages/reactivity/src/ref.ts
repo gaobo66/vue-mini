@@ -2,15 +2,16 @@
  * @Author: Mr.G 1271036013@qq.com
  * @Date: 2026-01-23 10:42:35
  * @LastEditors: Mr.G 1271036013@qq.com
- * @LastEditTime: 2026-02-04 14:05:38
+ * @LastEditTime: 2026-02-06 09:14:54
  * @FilePath: \vue-mini\packages\reactivity\src\ref.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { hasChanged, isObject } from '@vue/shared';
+import { hasChanged, isFunction, isObject } from '@vue/shared';
 import { activeSub } from './effect'
 import { reactive } from './reactive';
 import { Link ,trackRef,triggerRef,Dependency} from './system';
 import { ReactiveFlags } from './constants';
+import { callWithAsyncErrorHandling } from 'vue';
 
 
 
@@ -81,6 +82,16 @@ export function isRef(value) {
  */
 export  function unref(value){
   return isRef(value) ? value.value : value
+}
+
+
+/**
+ * @description 将 ref 类型的值转换为普通值
+ * @param maybeRefOrGetter 可以是 ref 类型，也可以是普通值
+ * @returns 普通值
+ */
+export function toValue(maybeRefOrGetter){
+  return isFunction(maybeRefOrGetter) ? maybeRefOrGetter():unref(maybeRefOrGetter)
 }
 
 
@@ -193,3 +204,65 @@ export function proxyRefs(target) {
 function convert(value){
   return  isObject(value) ? reactive(value) : value
 } 
+
+
+class CustomRefImpl implements Dependency{
+  // 订阅者链表的头节点
+  subs: Link | undefined
+  // 订阅者链表的尾节点
+  subsTail: Link | undefined
+  
+  // 标识当前属性是否是 ref 类型
+  public readonly [ReactiveFlags.IS_REF] = true
+
+  _value;
+
+
+  constructor(
+    private _getter: () => any,
+    private _setter: (newValue: any) => void,
+  ){}
+
+  get value(){
+    return (this._value = this._getter())
+  }
+  set value(newValue){
+    this._setter(newValue)
+  }
+}
+
+
+/**
+ * @description 创建一个自定义 ref，允许手动控制依赖追踪和触发更新
+ * @param factory 工厂函数，返回包含 get 和 set 方法的对象
+ * @returns 自定义 ref 对象
+ */
+export function customRef(factory){
+
+  const impl = new CustomRefImpl(()=>{}, ()=>{})
+   // 调用工厂函数，传入 track 和 trigger 函数
+  const { get, set } = factory(
+    // track 函数：用于手动收集依赖
+    () => {
+      if (activeSub) {
+        trackRef(impl)
+      }
+    },
+    // trigger 函数：用于手动触发更新
+    () => {
+      triggerRef(impl)
+    }
+  )
+  
+  // 更新实际的 getter 和 setter
+  // impl['_getter'] = get
+  // impl['_setter'] = set
+  Object.defineProperty(impl, 'value', {
+    get,
+    set,
+    enumerable: true,
+    configurable: true,
+  })
+  
+  return impl
+}

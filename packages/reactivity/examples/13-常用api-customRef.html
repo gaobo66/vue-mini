@@ -1,0 +1,63 @@
+<!--
+ * @Author: Mr.G 1271036013@qq.com
+ * @Date: 2026-02-06 09:09:54
+ * @LastEditors: Mr.G 1271036013@qq.com
+ * @LastEditTime: 2026-02-06 09:16:28
+ * @FilePath: \vue-mini\packages\reactivity\examples\13-常用api-customRef.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>customRef Example</title>
+    <style>
+      body {
+        padding: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+    // import { reactive, effect,customRef  } from '../../../node_modules/vue/dist/vue.esm-browser.js'
+    import { reactive, effect,customRef  } from '../dist/reactivity.esm.js'
+
+      // 创建一个带有防抖效果的 ref
+      function useDebouncedRef(value, delay = 3000) {
+        let timeout
+        return customRef((track, trigger) => {
+          return {
+            get() {
+              track() // 必须手动调用 track 函数来收集依赖
+              return value
+            },
+            set(newValue) {
+              clearTimeout(timeout)
+              timeout = setTimeout(() => {
+                value = newValue
+                trigger() // 手动触发更新
+                console.log('手动触发更新', value)
+              }, delay)
+            }
+          }
+        })
+      }
+
+      // 使用自定义的防抖 ref
+      const text = useDebouncedRef('hello')
+
+      // 创建一个副作用函数来响应 text 的变化
+      effect(() => {
+        console.log('Effect triggered:', text.value)
+      })
+
+      // 快速更新 text 的值，只有最后一次更新会在 300ms 后触发 effect
+      text.value = 'h'
+      text.value = 'he'
+      text.value = 'hel'
+      text.value = 'hell'
+      text.value = 'hello world'
+    </script>
+  </body>
+</html>
